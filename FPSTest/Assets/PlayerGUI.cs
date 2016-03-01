@@ -18,6 +18,8 @@ public class PlayerGUI : MonoBehaviour {
 	
 	int CurrentShopPage = 1;
 
+	bool isInMenu = false;
+
 	// Use this for initialization
 	void Start () {
 		info = this.GetComponent<PlayerInfo>();
@@ -25,7 +27,18 @@ public class PlayerGUI : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-	
+		if(info.isInMenu != isInMenu){
+			if(isInMenu){
+				Cursor.visible = true;
+				this.GetComponentInChildren<Camera>().GetComponent<MouseLook>().enabled = false;
+				this.GetComponent<MouseLook>().enabled = false;
+			} else {
+				Cursor.visible = false;
+				this.GetComponentInChildren<Camera>().GetComponent<MouseLook>().enabled = true;
+				this.GetComponent<MouseLook>().enabled = true;
+			}
+			info.isInMenu = isInMenu;
+		}
 	}
 	
 	void OnGUI(){
@@ -37,26 +50,19 @@ public class PlayerGUI : MonoBehaviour {
 	//Big Stats Menu
 		if(Input.GetButton("Stats Menu")){
 			BigStatsMenu();
+			isInMenu = false;
 		
 	//Item Shop
 		}else if(Input.GetButton("Item Shop")){
 			ItemShop();
+			isInMenu = true;
 			
 	//Small Stats Menu
 		}else{
 			SmallStatsMenu();
+			isInMenu = false;
 		}
 	}
-
-
-#region Search Region	
-/*
-																																		   ^
-		Mouse in here to search for a gui part	------------------------------------------------------------------------------------------>^
-
-*/
-#endregion
-
 
 	
 //Big Stats Menu

@@ -9,7 +9,10 @@ public class PerformsAttack : MonoBehaviour {
 	
 	float rangedCooldownremaining = 0.0f;
 	float rangedCooldownRatio;
-	
+
+	float currMeleWidth;
+	float currRangedWidth;
+
 	public GameObject debrisPrefab;
 	
 	public Vector2 size = new Vector2(165f, 25f);
@@ -33,6 +36,9 @@ public class PerformsAttack : MonoBehaviour {
 	void Start () {
 		info = this.GetComponent<PlayerInfo>();
 		pos = cooldownBarGUI;
+
+		currMeleWidth = size.x;
+		currRangedWidth = size.x;
 	}
 	
 	// Update is called once per frame
@@ -53,17 +59,24 @@ public class PerformsAttack : MonoBehaviour {
 		
 		meleCooldownRatio = (info.meleCooldown - meleCooldownremaining)/info.meleCooldown;
 		rangedCooldownRatio = (info.rangedCooldown - rangedCooldownremaining)/info.rangedCooldown;
+
+		currMeleWidth = Mathf.Lerp (currMeleWidth, size.x * meleCooldownRatio, Time.deltaTime*30*info.meleCooldown);
+		currRangedWidth = Mathf.Lerp (currRangedWidth, size.x * rangedCooldownRatio, Time.deltaTime*30*info.rangedCooldown);
 	
-//		Mele
-		if(Input.GetButtonDown("Mele Attack") && meleCooldownremaining <= 0){
-			meleAttack(info.meleDamage);
-			meleCooldownremaining = info.meleCooldown;
-		}
-	
-//		Ranged
-		if(Input.GetMouseButtonDown(0) && rangedCooldownremaining <= 0){
-			rangedAttack(info.rangedRange, info.rangedDamage);
-			rangedCooldownremaining = info.rangedCooldown;
+		if(!info.isInMenu){
+	//		Mele
+			if(Input.GetButtonDown("Mele Attack") && meleCooldownremaining <= 0){
+				meleAttack(info.meleDamage);
+				meleCooldownremaining = info.meleCooldown;
+				currMeleWidth = 0;
+			}
+			
+	//		Ranged
+			if(Input.GetMouseButtonDown(0) && rangedCooldownremaining <= 0){
+				rangedAttack(info.rangedRange, info.rangedDamage);
+				rangedCooldownremaining = info.rangedCooldown;
+				currRangedWidth = 0;
+			}
 		}
 
 	}
@@ -78,7 +91,7 @@ public class PerformsAttack : MonoBehaviour {
 		GUI.BeginGroup (new Rect (pos.x, pos.y, size.x, size.y), emptyTex, progress_empty);
 		
 		//draw the filled-in part:
-		GUI.BeginGroup (new Rect (0, 0, size.x * meleCooldownRatio, size.y), progress_full);
+		GUI.BeginGroup (new Rect (0, 0, currMeleWidth, size.y), progress_full);
 		
 		GUI.Box (new Rect (0, 0, size.x, size.y), fullTex, progress_full);
 		
@@ -95,7 +108,7 @@ public class PerformsAttack : MonoBehaviour {
 		GUI.BeginGroup (new Rect (pos.x, pos.y + size.y + 5, size.x, size.y), emptyTex, progress_empty);
 		
 		//draw the filled-in part:
-		GUI.BeginGroup (new Rect (0, 0, size.x * rangedCooldownRatio, size.y), progress_full);
+		GUI.BeginGroup (new Rect (0, 0, currRangedWidth, size.y), progress_full);
 		
 		GUI.Box (new Rect (0, 0, size.x, size.y), fullTex, progress_full);
 		

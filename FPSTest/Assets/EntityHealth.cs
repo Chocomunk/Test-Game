@@ -9,7 +9,9 @@ public class EntityHealth : MonoBehaviour {
 	public float healthRegenRate = 5;
 	public float healthRegenSpeed = 1;
 	public float healthRegenStart = 5;
+	public float healthGUISpeed = 5;
 	
+	float currWidth;
 	public float barDisplay = 1;
 	public float SizeScalar = 1;
 	public float xchange = 10;
@@ -18,11 +20,10 @@ public class EntityHealth : MonoBehaviour {
 	float playerDist = 10000;
 	float timestamp = 0.0f;
 	
-	public Vector2 rsize;
-	
 	public GUIStyle progress_empty;
 	public GUIStyle progress_full;
 	
+	public Vector2 rsize;
 	public Vector2 size = new Vector2(78.6f,24f);
 	public Vector2 playerGUI = new Vector2(0,0);
 	
@@ -32,7 +33,8 @@ public class EntityHealth : MonoBehaviour {
 	public Texture2D fullTex;
 	
 	public bool lookedAt = false;
-	public bool dead = false;
+	public bool killed = false;
+	private bool dead = false;
 	public bool canSee = false;
 	
 	bool isRegenHealth = false;
@@ -40,9 +42,9 @@ public class EntityHealth : MonoBehaviour {
 	public Renderer rend;
 	
 	public GameObject player;
+	private GameObject killer;
 	
 	void Start(){
-		rsize = size;
 		rend = this.GetComponent<Renderer>();
 		
 		if(rend == null){
@@ -50,11 +52,16 @@ public class EntityHealth : MonoBehaviour {
 		}
 		
 		player = GameObject.FindGameObjectWithTag("Player");
+		
+		rsize = size;
+		if(this.gameObject == player){rsize.Scale(new Vector2(.75f,1));}
+		currWidth = rsize.x;
 	}
 	
 	void Update(){	
 		//the player's health
 		barDisplay = curHealth/maxHealth;
+		currWidth = Mathf.Lerp (currWidth, rsize.x * barDisplay, Time.deltaTime*healthGUISpeed);
 		
 		playerDist = Vector3.Distance(this.transform.position, player.transform.position);
 		
@@ -64,16 +71,26 @@ public class EntityHealth : MonoBehaviour {
 			lookedAt = false;
 		}
 		
-		if(!dead && lookedAt && playerDist <= maxPlayerDist){
+		if(!killed && lookedAt && playerDist <= maxPlayerDist){
 			canSee = true;
 		}else{
 			canSee = false;
 		}
 		
 		if(curHealth < maxHealth && !isRegenHealth && Time.time > (timestamp + healthRegenStart) && this.gameObject == player) {
+			isRegenHealth = true;
 			StartCoroutine(RegainHealthOverTime());
 		}else if(curHealth > maxHealth){
 			curHealth = maxHealth;
+		}
+
+		if(dead){
+			if(currWidth < 0.005f){
+				this.GetComponent<PreformDeath>().Die(killer);
+				this.killed = true;
+			}else{
+				this.healthGUISpeed*=1.5f;
+			}
 		}
 	}
 	
@@ -104,23 +121,24 @@ public class EntityHealth : MonoBehaviour {
 			GUI.BeginGroup (new Rect (pos.x, pos.y, rsize.x, rsize.y), emptyTex, progress_empty);
 		
 			//draw the filled-in part:
-			GUI.BeginGroup (new Rect (0, 0, rsize.x * barDisplay, rsize.y), progress_full);
+			GUI.BeginGroup (new Rect (0, 0, currWidth, rsize.y), progress_full);
 			
 			GUI.Box (new Rect (0, 0, rsize.x, rsize.y), fullTex, progress_full);
 			
 			GUI.EndGroup ();
 			GUI.EndGroup ();
 			
-			GUI.Label (new Rect (pos.x + rsize.x/2 - GUI.skin.label.CalcSize(new GUIContent(curHealth + "/" + maxHealth)).x/2, pos.y + rsize.y / 4, rsize.x, rsize.y), curHealth + "/" + maxHealth, progress_full);		
+			GUI.Label (new Rect (pos.x + rsize.x/2 - GUI.skin.label.CalcSize(new GUIContent((int)curHealth + "/" + (int)maxHealth)).x/2, pos.y + rsize.y / 4, rsize.x, rsize.y), curHealth + "/" + maxHealth, progress_full);		
 		}	
 	}
 	
 	public void RecieveDamage(float amt, GameObject Offender){
 		curHealth -= amt;
 		timestamp = Time.time;
+		isRegenHealth = false;
 		if(curHealth <= 0){
-			this.GetComponent<PreformDeath>().Die(Offender);
 			dead = true;
+			this.killer = Offender;
 		}
 	}
 	
@@ -131,8 +149,7 @@ public class EntityHealth : MonoBehaviour {
 	}
 	
 	private IEnumerator RegainHealthOverTime() {
-		isRegenHealth = true;
-		while (curHealth < maxHealth) {
+		while (curHealth < maxHealth && isRegenHealth) {
 			curHealth += Mathf.Ceil(player.GetComponent<PlayerInfo>().health.healthRegenRate);
 			yield return new WaitForSeconds(player.GetComponent<PlayerInfo>().health.healthRegenSpeed);
 		}

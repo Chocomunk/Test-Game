@@ -37,6 +37,9 @@ public class PlayerInfo : MonoBehaviour {
 	public float rangedRange;
 	public float rangedCooldown;
 	public float rangedDamage;
+
+//GUI stats
+	public bool isInMenu = false;
 	
 	// Use this for initialization
 	void Start () {
