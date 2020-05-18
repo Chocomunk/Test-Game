@@ -23,6 +23,7 @@ public class PlayerGUI : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		info = this.GetComponent<PlayerInfo>();
+		Cursor.visible = false;
 	}
 	
 	// Update is called once per frame
